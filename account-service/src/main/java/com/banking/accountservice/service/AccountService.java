@@ -48,16 +48,92 @@ public class AccountService {
         return mapToResponse(savedAccount);
     }
 
+    /**
+     * Get account by account number
+     * @Param accountNumber
+     * */
+
+    public AccountResponse getAccount(String accountNumber) {
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+
+        return mapToResponse(account);
+    }
+
+    /**
+     * Get account balance
+     * @Param accountNumber
+     * */
+    public BigDecimal getBalance(String accountNumber) {
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+
+        return account.getBalance();
+    }
+
+    /**
+    * Block Account - called by Fraud detection service via kafka
+    * @Param accountNumber
+    * */
+    public void blockAccount(String accountNumber) {
+       log.info("Blocking account: {}", accountNumber);
+       Account account = accountRepository.findByAccountNumber(accountNumber)
+               .orElseThrow(() -> new RuntimeException("Account not found"));
+       account.setStatus(AccountStatus.BLOCKED);
+       accountRepository.save(account);
+       log.info("Account blocked: {]", accountNumber);
+    }
+
+    /**
+     * Deduct balance from sender account
+     * called by transaction service via kafka
+     * */
+    public void deductBalance(String accountNumber, BigDecimal amount) {
+        log.info("Deducting balance {} from account: {}", accountNumber, amount);
+
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+
+        if(account.getStatus() != AccountStatus.ACTIVE) {
+            throw new RuntimeException("Account is not active " +accountNumber);
+        }
+
+        if(account.getBalance().compareTo(amount) < 0) {
+            throw new RuntimeException("Insufficient funds for account " + accountNumber);
+        }
+
+        account.setBalance(account.getBalance().subtract(amount));
+        accountRepository.save(account);
+
+        log.info("Balance updated, New Balance: {}", account.getBalance());
+    }
+
+    /**
+     * Credit Balance
+     * called by transaction service via kafka
+     * */
+
+    public void creditBalance(String accountNumber, BigDecimal amount) {
+         log.info("Crediting {} to account: {}", accountNumber, amount);
+
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new RuntimeException("Account not found"));
+
+        account.setBalance(account.getBalance().add(amount));
+        accountRepository.save(account);
+        log.info("Balance Created, New Balance: {}", account.getBalance());
+    }
+
     // Generate unique 12 digit account number
     private String generateAccountNumber() {
-          String accountNumber;
-          do{
-              long number = secureRandom.nextLong(1_000_000_000_000L);
+        String accountNumber;
+        do{
+            long number = secureRandom.nextLong(1_000_000_000_000L);
 
-              accountNumber = String.format("%012d", number);
-          }while(accountRepository.existsByAccountNumber(accountNumber));
+            accountNumber = String.format("%012d", number);
+        }while(accountRepository.existsByAccountNumber(accountNumber));
 
-          return accountNumber;
+        return accountNumber;
     }
 
     private AccountResponse mapToResponse(Account account) {
@@ -75,4 +151,5 @@ public class AccountService {
 
         return response;
     }
+
 }
