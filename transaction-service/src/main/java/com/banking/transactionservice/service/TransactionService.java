@@ -10,10 +10,13 @@ import com.banking.transactionservice.event.TransactionInitiatedEvent;
 import com.banking.transactionservice.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -95,5 +98,20 @@ public class TransactionService {
         response.setCompletedAt(transaction.getCompletedAt());
 
         return response;
+    }
+
+    public TransactionResponse getTransaction(String transactionId) {
+        return mapToResponse(transactionRepository.findById(transactionId)
+                .orElseThrow(() -> new RuntimeException(
+                        "Transaction not found: " +transactionId
+                )));
+    }
+
+    public List<TransactionResponse> getTransactionHistory(String accountNumber) {
+        return transactionRepository.
+                findBySenderAccountNumberOrderByCreatedAtDesc(accountNumber)
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
 }
