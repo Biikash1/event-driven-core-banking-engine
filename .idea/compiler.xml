@@ -3,7 +3,7 @@
   <component name="CompilerConfiguration">
     <annotationProcessing>
       <profile default="true" name="Default" enabled="true" />
-      <profile name="Annotation profile for fraud-detection-service" enabled="true">
+      <profile name="Annotation profile for notification-service" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
@@ -14,6 +14,7 @@
         <module name="transaction-service" />
         <module name="payment-service" />
         <module name="account-service" />
+        <module name="notification-service" />
         <module name="fraud-detection-service" />
       </profile>
     </annotationProcessing>
@@ -23,6 +24,7 @@
       <module name="account-service" options="-parameters" />
       <module name="api-gateway" options="-parameters" />
       <module name="fraud-detection-service" options="-parameters" />
+      <module name="notification-service" options="-parameters" />
       <module name="payment-service" options="-parameters" />
       <module name="transaction-service" options="-parameters" />
     </option>
