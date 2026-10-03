@@ -197,6 +197,20 @@ public class TransactionService {
                 transaction.getAmount(), transaction.getSenderAccountNumber());
     }
 
+    public void processCleanResult(String transactionId) {
+        Transaction transaction = transactionRepository.findById(transactionId)
+                .orElseThrow(() -> new RuntimeException(
+                        "Transaction not found " +transactionId
+                ));
+
+        if(transaction.getStatus() != TransactionStatus.PROCESSING) {
+            log.warn("Transaction {} not PROCESSING - skipping", transactionId);
+            return;
+        }
+
+        completeTransaction(transaction);
+    }
+
     private TransactionResponse mapToResponse(Transaction transaction) {
 
         TransactionResponse response = new TransactionResponse();
@@ -218,4 +232,5 @@ public class TransactionService {
 
         return response;
     }
+
 }

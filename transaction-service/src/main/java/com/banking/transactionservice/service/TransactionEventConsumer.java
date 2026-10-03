@@ -11,7 +11,6 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
 
-import javax.management.ObjectName;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -24,6 +23,8 @@ public class TransactionEventConsumer {
     private final TransactionRepository transactionRepository;
     private final RedisTemplate<String, String> redisTemplate;
     private static final long OTP_EXPIRY_MINUTES = 5;
+    private final TransactionService transactionService;
+
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private static final String TRANSACTION_OTP_GENERATED_TOPIC = "transaction.otp.generated";
 
@@ -83,5 +84,19 @@ public class TransactionEventConsumer {
         } catch (Exception e) {
             log.error("Error handling verification required: {}", e.getMessage());
         }
+    }
+
+    @KafkaListener(topics = "fraud.check.clean")
+    public void consumeFraudCheckCleanResult(
+            @Payload Map<String, Object> payload) {
+
+        try{
+
+            String transactionId = (String) payload.get("transactionId");
+             transactionService.processCleanResult(transactionId);
+        } catch (Exception e) {
+           log.error("Error processing fraud check result: {}", e.getMessage());
+        }
+
     }
 }
