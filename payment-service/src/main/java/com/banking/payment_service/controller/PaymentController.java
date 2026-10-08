@@ -3,6 +3,7 @@ package com.banking.payment_service.controller;
 import com.banking.payment_service.dto.CreatePaymentRequest;
 import com.banking.payment_service.dto.PaymentOrderResponse;
 import com.banking.payment_service.service.PaymentService;
+import com.razorpay.RazorpayException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +26,7 @@ public class PaymentController {
 
     @PostMapping("/create-order")
     public ResponseEntity<PaymentOrderResponse> createPaymentOrder(
-            @Valid @RequestBody CreatePaymentRequest request) {
+            @Valid @RequestBody CreatePaymentRequest request) throws RazorpayException {
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(paymentService.createPaymentOrder(request));
