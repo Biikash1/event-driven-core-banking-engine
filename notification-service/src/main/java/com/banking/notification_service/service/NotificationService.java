@@ -90,10 +90,33 @@ public class NotificationService {
                     ));
 
         } catch (Exception e) {
-          log.error("Error sending fraud alert: {}", e.getMessage()
+             log.error("Error sending fraud alert: {}", e.getMessage()
           );
         }
 
+    }
+
+
+    public void consumeTransactionRefunded(
+            @Payload Map<String, Object> payload) {
+
+        try {
+
+            String senderAccount = (String) payload.get("senderAccountNumber");
+            String amount = payload.get("amount").toString();
+            String reason = (String) payload.get("reason");
+
+            sendAlert(senderAccount,
+                    "REFUND PROCESSED",
+                    String.format(
+                            "Your transaction of %s was cancelled" +
+                                    "Reason: %s" +
+                                    "%s has been refunded to account %s.",
+                            amount, reason, amount, senderAccount
+                    ));
+        } catch (Exception e) {
+            log.error("Error sending refund notification: {}", e.getMessage());
+        }
     }
 
     private void sendAlert(String accountNumber,
