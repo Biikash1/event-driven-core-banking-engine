@@ -40,6 +40,62 @@ public class NotificationService {
         }
     }
 
+    @KafkaListener(topics = "transaction.completed")
+    public void consumeTransactionCompleted(
+            @Payload Map<String, Object> payload) {
+
+        try {
+
+            String senderAccount = (String) payload.get("senderAccountNumber");
+            String receiverAccount = (String) payload.get("receiverAccountNumber");
+            String amount = payload.get("amount").toString();
+
+            //DEBIT ALERT
+            sendAlert(senderAccount,
+                    "DEBIT ALERT",
+                    String.format(
+                            "%s debited from account %s",
+                            amount, senderAccount
+                    ));
+
+            //CREDIT ALERT
+            sendAlert(receiverAccount,
+                    "CREDIT ALERT",
+                    String.format(
+                            "%s credited from account %s",
+                            amount, receiverAccount
+                    ));
+
+        }catch (Exception e) {
+           log.error("Error sending transaction notification: {}", e.getMessage());
+        }
+    }
+
+    @KafkaListener(topics = "fraud.detected")
+    public void consumeFraudDetected(
+            @Payload Map<String, Object> payload) {
+
+        try {
+
+            String accountNumber = (String) payload.get("senderAccountNumber");
+            String reason = (String) payload.get("reason");
+
+            sendAlert(accountNumber,
+                    "SUSPICIOUS ACTIVITY DETECTED",
+                    String.format(
+                            "Your account %s has been blocked. " +
+                                    "Reason: %s. " +
+                                    "Please contact your bank immediately. ",
+                            accountNumber, reason
+                    ));
+
+        } catch (Exception e) {
+          log.error("Error sending fraud alert: {}", e.getMessage()
+          );
+        }
+
+    }
+
     private void sendAlert(String accountNumber,
                            String subject,
                            String format) {
