@@ -114,7 +114,7 @@ public class PaymentService {
             String orderId = (String) paymentData.get("order_id");
             String paymentId = (String) paymentData.get("id");
 
-            Payment payment = paymentRepository.findByRazorpayOrder(orderId)
+            Payment payment = paymentRepository.findByRazorpayOrderId(orderId)
                     .orElseThrow(() -> new RuntimeException(
                             "Payment not found for order: "+orderId
                     ));
@@ -144,7 +144,7 @@ public class PaymentService {
             Map<String, Object> paymentData = extractPaymentData(payload);
             String orderId = (String) paymentData.get("order_id");
 
-            Payment payment = paymentRepository.findByRazorpayOrder(orderId)
+            Payment payment = paymentRepository.findByRazorpayOrderId(orderId)
                     .orElseThrow(() -> new RuntimeException(
                             "Payment not found for order: "+orderId
                     ));

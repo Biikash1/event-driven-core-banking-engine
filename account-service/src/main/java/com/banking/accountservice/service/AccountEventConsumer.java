@@ -17,40 +17,60 @@ public class AccountEventConsumer {
     private final AccountService accountService;
 
     /**
-     *  Consume transaction.completed event from kafka
-     *  Credits receiver account
-     * @param payload
-     * **/
+     * Consumes transaction.completed events.
+     * Credits the receiver's account.
+     */
+    @KafkaListener(topics = "transaction.completed", groupId = "account-service-group")
+    public void consumeTransactionComplete(@Payload Map<String, Object> payload) {
 
-    @KafkaListener(topics = "transaction.completed")
-    public void consumeTransactionComplete(
-            @Payload Map<String, Object> payload) {
-        try{
+        try {
             String receiverAccount = (String) payload.get("receiverAccount");
-            BigDecimal amount = new BigDecimal(payload.get("amount").toString());
 
-            log.info("Crediting account: {} amount: {}", receiverAccount, amount);
+            Object amountValue = payload.get("amount");
+
+            if (receiverAccount == null || amountValue == null) {
+                throw new IllegalArgumentException("Missing receiverAccount or amount in event");
+            }
+
+            BigDecimal amount = new BigDecimal(amountValue.toString());
+
+            if (amount.signum() <= 0) {
+                throw new IllegalArgumentException("Transaction amount must be positive");
+            }
+
+            log.info("Crediting account: {}, amount: {}", receiverAccount, amount);
+
             accountService.creditBalance(receiverAccount, amount);
-        }catch (Exception e) {
-            log.error("Error crediting account: {}", e.getMessage());
+
+        } catch (Exception e) {
+            log.error("Failed to process transaction.completed event: {}", payload, e);
+
+            throw e;
         }
     }
 
     /**
-     *  Consume fraud.detected event from kafka
-     *  Blocks the flagged account
-     * @param payload
-     * **/
+     * Consumes fraud.detected events.
+     * Blocks the flagged account.
+     */
+    @KafkaListener(topics = "fraud.detected", groupId = "account-service-group")
+    public void consumeFraudDetected(@Payload Map<String, Object> payload) {
 
-    @KafkaListener(topics = "fraud.detected ")
-    public void consumeFraudDetected(
-            @Payload Map<String, Object> payload) {
-        try{
+        try {
             String accountNumber = (String) payload.get("accountNumber");
-            log.info("Fraud detected - blocking account: {}", accountNumber);
+
+            if (accountNumber == null || accountNumber.isBlank()) {
+                throw new IllegalArgumentException("Missing accountNumber in fraud event");
+            }
+
+            log.warn("Fraud detected - blocking account: {}", accountNumber);
+
             accountService.blockAccount(accountNumber);
+
         } catch (Exception e) {
-            log.error("Error blocking account: {}", e.getMessage());
+            log.error("Failed to process fraud.detected event: {}", payload, e);
+
+            throw e;
         }
     }
 }
