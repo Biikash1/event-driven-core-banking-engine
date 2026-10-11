@@ -96,7 +96,7 @@ public class NotificationService {
 
     }
 
-
+     @KafkaListener(topics = "transaction.refunded")
     public void consumeTransactionRefunded(
             @Payload Map<String, Object> payload) {
 
@@ -116,6 +116,49 @@ public class NotificationService {
                     ));
         } catch (Exception e) {
             log.error("Error sending refund notification: {}", e.getMessage());
+        }
+    }
+
+    @KafkaListener(topics = "payment.complete")
+    public void consumePaymentCompleted(
+            @Payload Map<String, Object> payload) {
+
+        try{
+
+            String accountNumber = (String) payload.get("accountNumber");
+            String amount = payload.get("amount").toString();
+
+            sendAlert(accountNumber,
+                    "PAYMENT SUCCESSFUL",
+                    String.format(
+                            "Payment of %s completed. " +
+                                    "Razorpay ID: %s",
+                            amount, payload.get("razorpayPaymentId")
+                    ));
+        } catch (Exception e) {
+            log.error("Error sending payment notification: {}", e.getMessage());
+        }
+    }
+
+    @KafkaListener(topics = "payment.failed")
+    public void consumePaymentFailed(
+            @Payload Map<String, Object> payload) {
+
+        try{
+
+            String accountNumber = (String) payload.get("accountNumber");
+            String amount = payload.get("amount").toString();
+
+            sendAlert(accountNumber,
+                    "PAYMENT FAILED",
+                    String.format(
+                            "Your payment of %s could not be processed. " +
+                                    "Please try again or contact support.",
+                            amount
+                    ));
+
+        } catch (Exception e) {
+            log.error("Error sending payment failure notification: {}", e.getMessage());
         }
     }
 
